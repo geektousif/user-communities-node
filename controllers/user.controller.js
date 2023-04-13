@@ -1,10 +1,96 @@
-const expressAsyncHandler = require("express-async-handler");
+const asyncHandler = require("express-async-handler");
+
 const User = require("../models/user.model");
 
-exports.registerUser = expressAsyncHandler(async (req, res) => {
+const signUp = asyncHandler(async (req, res) => {
   try {
     const { name, email, password } = req.body;
 
     const user = await User.create({ name, email, password });
-  } catch (error) {}
+    user.password = undefined;
+
+    const token = user.generateJWT();
+
+    res.cookie("token", token, {
+      httpOnly: true,
+      expires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+    });
+
+    return res.status(200).json({
+      status: true,
+      content: {
+        data: {
+          id: user._id,
+          name: user.name,
+          email: user.email,
+          created_at: user.created_at,
+        },
+        meta: {
+          access_token: token,
+        },
+      },
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).send("Something went wrong");
+  }
 });
+
+const signIn = asyncHandler(async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    const user = await User.findOne({ email }).select("+password");
+
+    const passwordMatched = user.matchPassword(password);
+
+    if (passwordMatched) {
+      const token = user.generateJWT();
+      user.password = undefined;
+      res.cookie("token", token, {
+        httpOnly: true,
+        expires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+      });
+      return res.status(200).json({
+        status: true,
+        content: {
+          data: {
+            id: user._id,
+            name: user.name,
+            email: user.email,
+            created_at: user.created_at,
+          },
+          meta: {
+            access_token: token,
+          },
+        },
+      });
+    }
+    return res.status(400).json({
+      status: false,
+      errors: [
+        {
+          message: "The credentials you provided are invalid.",
+          code: "INVALID_CREDENTIALS",
+        },
+      ],
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).send("Something went wrong");
+  }
+});
+
+// TODO make error response generic
+
+const getMe = asyncHandler((req, res) => {
+  const user = req.user;
+  return res.json({
+    status: true,
+    content: {
+      data: user,
+    },
+  });
+});
+
+module.exports = { signUp, signIn, getMe };

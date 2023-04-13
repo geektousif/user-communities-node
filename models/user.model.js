@@ -1,14 +1,14 @@
 const mongoose = require("mongoose");
-import { Snowflake } from "@theinternetfolks/snowflake";
+const { Snowflake } = require("@theinternetfolks/snowflake");
+const bcrypt = require("bcryptjs");
+const JWT = require("jsonwebtoken");
+const { JWT_EXPIRY, JWT_SECRET } = require("../config/index");
 
 const userSchema = new mongoose.Schema(
   {
-    id: {
+    _id: {
       type: String,
-      primaryKey: true,
       default: () => Snowflake.generate(),
-      index: true,
-      unique: true,
     },
     name: {
       type: String,
@@ -23,12 +23,34 @@ const userSchema = new mongoose.Schema(
     password: {
       type: String,
       maxLength: 64,
+      select: false,
     },
   },
   {
-    timestamps: true,
-    id: false,
+    timestamps: {
+      createdAt: "created_at",
+      updatedAt: false,
+    },
+    _id: false,
+    autoIndex: true,
   }
 );
 
-module.exports = mongoose.Model("User", userSchema);
+userSchema.pre("save", async function (next) {
+  this.password = await bcrypt.hash(this.password, 10);
+  next();
+});
+
+userSchema.methods = {
+  matchPassword: async function (passwordInput) {
+    return await bcrypt.compare(passwordInput, this.password);
+  },
+
+  generateJWT: function () {
+    return JWT.sign({ _id: this._id, email: this.email }, JWT_SECRET, {
+      expiresIn: JWT_EXPIRY,
+    });
+  },
+};
+
+module.exports = mongoose.model("User", userSchema);
