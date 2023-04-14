@@ -28,8 +28,7 @@ const communitySchema = new mongoose.Schema(
 );
 
 communitySchema.pre("save", async function (next) {
-  slugged = slugify(this.name, { lower: true });
-  this.slug = `${slugged}-${crypto.randomBytes(8).toString("hex")}`;
+  this.slug = slugify(this.name, { lower: true });
 });
 
 module.exports = mongoose.model("Community", communitySchema);

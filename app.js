@@ -13,6 +13,7 @@ app.use(cookieParser());
 
 app.use("/v1/auth", require("./routes/user.route"));
 app.use("/v1/role", require("./routes/role.route"));
+app.use("/v1/community", require("./routes/community.route"));
 
 app.get("/", (req, res) => {
   res.send("Hello !!!");

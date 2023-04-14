@@ -1,7 +1,7 @@
 const { Snowflake } = require("@theinternetfolks/snowflake");
 const mongoose = require("mongoose");
 
-const communitySchema = new mongoose.Schema(
+const memberSchema = new mongoose.Schema(
   {
     _id: {
       type: String,
@@ -29,4 +29,4 @@ const communitySchema = new mongoose.Schema(
   }
 );
 
-module.exports = mongoose.model("Community", communitySchema);
+module.exports = mongoose.model("Member", memberSchema);
