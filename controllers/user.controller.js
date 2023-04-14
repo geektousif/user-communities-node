@@ -83,7 +83,7 @@ const signIn = asyncHandler(async (req, res) => {
 
 // TODO make error response generic
 
-const getMe = asyncHandler((req, res) => {
+const getMe = asyncHandler(async function (req, res) {
   const user = req.user;
   return res.json({
     status: true,
@@ -93,4 +93,15 @@ const getMe = asyncHandler((req, res) => {
   });
 });
 
-module.exports = { signUp, signIn, getMe };
+const logout = asyncHandler(async (req, res) => {
+  res.cookie("token", null, {
+    expires: new Date(Date.now()),
+    httpOnly: true,
+  });
+  res.status(200).json({
+    status: true,
+    message: "Logged Out",
+  });
+});
+
+module.exports = { signUp, signIn, getMe, logout };

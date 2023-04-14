@@ -12,6 +12,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
 app.use("/v1/auth", require("./routes/user.route"));
+app.use("/v1/role", require("./routes/role.route"));
 
 app.get("/", (req, res) => {
   res.send("Hello !!!");

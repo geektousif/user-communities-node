@@ -3,7 +3,7 @@ const JWT = require("jsonwebtoken");
 const { JWT_SECRET } = require("../config/index");
 const User = require("../models/user.model");
 
-exports.loggedInCheck = asyncHandler(async (req, res, next) => {
+const loggedInCheck = asyncHandler(async (req, res, next) => {
   let token;
 
   if (
@@ -31,3 +31,5 @@ exports.loggedInCheck = asyncHandler(async (req, res, next) => {
     throw new Error("You need to sign in to proceed.");
   }
 });
+
+module.exports = { loggedInCheck };
