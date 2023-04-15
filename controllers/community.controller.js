@@ -2,6 +2,7 @@ const asyncHandler = require("express-async-handler");
 const Community = require("../models/community.model");
 const Member = require("../models/member.model");
 const Role = require("../models/role.model");
+const { model } = require("mongoose");
 
 const create = asyncHandler(async (req, res) => {
   try {
@@ -10,7 +11,10 @@ const create = asyncHandler(async (req, res) => {
     const community = await Community.create({ name, owner: user._id });
 
     // TODO They should also be added with the role Community Admin
-    const adminRoleId = await Role.findOne({ name: "Community Admin" })._id;
+    const { _id: adminRoleId } = await Role.findOne({
+      name: "Community Admin",
+    });
+
     await Member.create({
       community: community._id,
       user: community.owner,
@@ -32,7 +36,7 @@ const create = asyncHandler(async (req, res) => {
     });
   } catch (error) {
     console.error(error);
-    res.status(500).send("Something went wrong");
+    return res.status(500).send("Something went wrong");
   }
 });
 
@@ -42,9 +46,10 @@ const getAll = asyncHandler(async (req, res) => {
   const page = parseInt(req.query.page) || 1;
   const pages = Math.ceil(total / perPage);
 
-  const communities = await Community.find()
+  const communities = await Community.find({}, { __v: 0 })
     .skip(perPage * page - perPage)
-    .limit(perPage);
+    .limit(perPage)
+    .populate("owner", "_id name", "User");
 
   res.status(200).json({
     status: true,
@@ -59,4 +64,70 @@ const getAll = asyncHandler(async (req, res) => {
   });
 });
 
-module.exports = { create, getAll };
+const getAllMembers = asyncHandler(async (req, res) => {
+  const { id: communityId } = req.params;
+
+  const total = await Member.find({ community: communityId }).countDocuments();
+  const perPage = 10;
+  const page = parseInt(req.query.page) || 1;
+  const pages = Math.ceil(total / perPage);
+
+  const members = await Member.find({ community: communityId }, { __v: 0 })
+    .skip(perPage * page - perPage)
+    .limit(perPage)
+    .populate("user", "_id name", "User")
+    .populate("role", "_id name", "Role");
+
+  res.status(200).json({
+    status: true,
+    content: {
+      meta: {
+        total: total,
+        pages: pages,
+        page: page,
+      },
+      data: members,
+    },
+  });
+});
+
+const myOwnedCommunity = asyncHandler(async (req, res) => {
+  const me = req.user;
+
+  const total = await Community.find({ owner: me._id }).countDocuments();
+  const perPage = 10;
+  const page = parseInt(req.query.page) || 1;
+  const pages = Math.ceil(total / perPage);
+
+  const communities = await Community.find({ owner: me._id });
+
+  res.status(200).json({
+    status: true,
+    content: {
+      meta: {
+        total: total,
+        pages: pages,
+        page: page,
+      },
+      data: communities,
+    },
+  });
+});
+
+const myJoinedCommunity = asyncHandler(async (req, res) => {
+  const me = req.user;
+
+  const myMembershipCommunities = await Member.find({ user: me._id }).select(
+    "community"
+  );
+
+  return console.log(myMembershipCommunities);
+});
+
+module.exports = {
+  create,
+  getAll,
+  getAllMembers,
+  myOwnedCommunity,
+  myJoinedCommunity,
+};

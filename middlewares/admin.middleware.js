@@ -4,7 +4,9 @@ const Role = require("../models/role.model");
 
 const isAdmin = asyncHandler(async (req, res, next) => {
   try {
-    const adminRoleId = await Role.findOne({ name: "Community Admin" })._id;
+    const { _id: adminRoleId } = await Role.findOne({
+      name: "Community Admin",
+    });
 
     const { community } = req.body;
     const currentUser = req.user;
@@ -13,7 +15,7 @@ const isAdmin = asyncHandler(async (req, res, next) => {
       user: currentUser._id,
       role: adminRoleId,
     });
-
+    console.log(communityAdmin);
     if (!communityAdmin) {
       return res.status(400).json({
         status: false,
@@ -32,3 +34,5 @@ const isAdmin = asyncHandler(async (req, res, next) => {
     // TODO error message
   }
 });
+
+module.exports = isAdmin;
