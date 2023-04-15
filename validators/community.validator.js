@@ -1,19 +1,26 @@
 const Validator = require("validatorjs");
-const Community = require("../models/community.model");
 const slugify = require("slugify");
+const asyncHandler = require("express-async-handler");
+const Community = require("../models/community.model");
 
-const creationValidator = async (req, res, next) => {
+const creationValidator = asyncHandler(async (req, res, next) => {
   try {
     const { name } = req.body;
 
     Validator.registerAsync(
       "slug_exist",
       async function (name, attribute, req, passes) {
-        const community = await Community.findOne({
-          slug: slugify(name, { lower: true }),
-        });
-        if (community) {
-          return passes(false, "Slug with this community name already exist");
+        try {
+          const community = await Community.findOne({
+            slug: slugify(name, { lower: true }),
+          });
+          if (community) {
+            return passes(false, "Slug with this community name already exist");
+          } else {
+            passes();
+          }
+        } catch (error) {
+          passes(false, error.message);
         }
       }
     );
@@ -25,14 +32,24 @@ const creationValidator = async (req, res, next) => {
     const validation = new Validator({ name }, rules);
 
     validation.fails(async function () {
-      const errors = validation.errors.all();
-      return res.status(400).json({ status: false, errors }); // TODO error as said
+      try {
+        const errors = validation.errors.all();
+        return res.status(400).json({ status: false, errors }); // TODO error as said
+      } catch (error) {
+        console.error(error);
+        res
+          .status(500)
+          .json({ status: false, errors: { server: "Internal server error" } });
+      }
     });
 
-    return next();
+    validation.passes(() => {
+      req.validatedName = name;
+      next();
+    });
   } catch (error) {
     console.error(error);
   }
-};
+});
 
 module.exports = { creationValidator };

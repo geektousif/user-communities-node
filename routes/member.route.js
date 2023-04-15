@@ -2,9 +2,14 @@ const express = require("express");
 const router = express.Router();
 
 const { loggedInCheck } = require("../middlewares/auth.middleware");
-const isAdmin = require("../middlewares/admin.middleware");
-const { addMember } = require("../controllers/member.controller");
+const {
+  canAddMember,
+  canDeleteMember,
+} = require("../middlewares/member_auth.middleware");
+const { addMember, deleteMember } = require("../controllers/member.controller");
+const { addMemberValidator } = require("../validators/member.validator");
 
-router.post("/", loggedInCheck, isAdmin, addMember);
+router.post("/", loggedInCheck, canAddMember, addMemberValidator, addMember);
+router.delete("/:id", loggedInCheck, canDeleteMember, deleteMember);
 
 module.exports = router;

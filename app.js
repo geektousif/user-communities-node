@@ -1,5 +1,6 @@
 const cookieParser = require("cookie-parser");
 const express = require("express");
+const { errorHandler } = require("./middlewares/errorHandler.middleware");
 // const cors = require("cors");
 
 // TODO correct response structure
@@ -24,5 +25,7 @@ app.use(function (err, req, res, next) {
   console.error(err.stack);
   res.status(500).send(err.message);
 });
+
+app.use(errorHandler);
 
 module.exports = app;

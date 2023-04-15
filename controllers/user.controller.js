@@ -4,7 +4,8 @@ const User = require("../models/user.model");
 
 const signUp = asyncHandler(async (req, res) => {
   try {
-    const { name, email, password } = req.body;
+    // FIXME user create even after showing error
+    const { name, email, password } = req.validatedData;
 
     const user = await User.create({ name, email, password });
     user.password = undefined;
@@ -38,7 +39,7 @@ const signUp = asyncHandler(async (req, res) => {
 
 const signIn = asyncHandler(async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { email, password } = req.validatedInput;
 
     const user = await User.findOne({ email }).select("+password");
 

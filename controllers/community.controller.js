@@ -6,7 +6,7 @@ const { model } = require("mongoose");
 
 const create = asyncHandler(async (req, res) => {
   try {
-    const { name } = req.body;
+    const name = req.validatedName;
     const user = req.user;
     const community = await Community.create({ name, owner: user._id });
 
@@ -99,7 +99,9 @@ const myOwnedCommunity = asyncHandler(async (req, res) => {
   const page = parseInt(req.query.page) || 1;
   const pages = Math.ceil(total / perPage);
 
-  const communities = await Community.find({ owner: me._id });
+  const communities = await Community.find({ owner: me._id })
+    .skip(perPage * page - perPage)
+    .limit(perPage);
 
   res.status(200).json({
     status: true,
@@ -120,8 +122,30 @@ const myJoinedCommunity = asyncHandler(async (req, res) => {
   const myMembershipCommunities = await Member.find({ user: me._id }).select(
     "community"
   );
+  const communityIDArray = myMembershipCommunities.map((obj) => obj.community);
 
-  return console.log(myMembershipCommunities);
+  const total = communityIDArray.length;
+  const perPage = 10;
+  const page = parseInt(req.query.page) || 1;
+  const pages = Math.ceil(total / perPage);
+
+  const communities = await Community.find({ _id: { $in: communityIDArray } })
+    .skip(perPage * page - perPage)
+    .limit(perPage)
+    .populate("owner", "_id name", "User")
+    .select("-__v");
+
+  res.status(200).json({
+    status: true,
+    content: {
+      meta: {
+        total: total,
+        pages: pages,
+        page: page,
+      },
+      data: communities,
+    },
+  });
 });
 
 module.exports = {

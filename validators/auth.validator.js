@@ -1,16 +1,23 @@
 const Validator = require("validatorjs");
+const asyncHandler = require("express-async-handler");
 const User = require("../models/user.model");
 
-const signUpValidator = async (req, res, next) => {
+const signUpValidator = asyncHandler(async (req, res, next) => {
   try {
     const data = req.body;
 
     Validator.registerAsync(
       "email_exist",
       async function (email, attribute, req, passes) {
-        const user = await User.findOne({ email: email });
-        if (user) {
-          return passes(false, "Email already exists");
+        try {
+          const user = await User.findOne({ email: email });
+          if (user) {
+            passes(false, "Email already exists");
+          } else {
+            passes();
+          }
+        } catch (error) {
+          passes(false, error.message);
         }
       }
     );
@@ -40,25 +47,44 @@ const signUpValidator = async (req, res, next) => {
     // });
 
     validatedUser.fails(async function () {
-      const errors = validatedUser.errors.all();
-      return res.status(400).json({ status: false, errors });
+      try {
+        const errors = validatedUser.errors.all();
+        res.status(400).json({ status: false, errors });
+      } catch (error) {
+        console.error(error);
+        res
+          .status(500)
+          .json({ status: false, errors: { server: "Internal server error" } });
+      }
     });
 
-    return next();
+    validatedUser.passes(() => {
+      req.validatedData = data;
+      next();
+    });
   } catch (error) {
     console.error(error);
+    return res
+      .status(400)
+      .json({ status: false, errors: { email: error.message } });
   }
-};
+});
 
-const signInValidator = async (req, res, next) => {
+const signInValidator = asyncHandler(async (req, res, next) => {
   try {
     const data = req.body;
     Validator.registerAsync(
       "user_exist",
       async function (email, attribute, req, passes) {
-        const user = await User.findOne({ email: email });
-        if (!user) {
-          return passes(false, "User with this email doesn't exist");
+        try {
+          const user = await User.findOne({ email: email });
+          if (!user) {
+            return passes(false, "User with this email doesn't exist");
+          } else {
+            return passes();
+          }
+        } catch (error) {
+          passes(false, error.message);
         }
       }
     );
@@ -70,14 +96,27 @@ const signInValidator = async (req, res, next) => {
     validatedInput = new Validator(data, rules);
 
     validatedInput.fails(async function () {
-      const errors = validatedInput.errors.all();
-      return res.status(400).json({ status: false, errors });
+      try {
+        const errors = validatedInput.errors.all();
+        return res.status(400).json({ status: false, errors });
+      } catch (error) {
+        console.error(error);
+        res
+          .status(500)
+          .json({ status: false, errors: { server: "Internal server error" } });
+      }
     });
 
-    return next();
+    validatedInput.passes(() => {
+      req.validatedInput = data;
+      next();
+    });
   } catch (error) {
     console.error(error);
+    res
+      .status(500)
+      .json({ status: false, errors: { server: "Internal server error" } });
   }
-};
+});
 
 module.exports = { signUpValidator, signInValidator };
