@@ -2,6 +2,7 @@ const Validator = require("validatorjs");
 const slugify = require("slugify");
 const asyncHandler = require("express-async-handler");
 const Community = require("../models/community.model");
+const { validationErrors } = require("../utils/errorResponse");
 
 const creationValidator = asyncHandler(async (req, res, next) => {
   try {
@@ -34,7 +35,7 @@ const creationValidator = asyncHandler(async (req, res, next) => {
     validation.fails(async function () {
       try {
         const errors = validation.errors.all();
-        return res.status(400).json({ status: false, errors }); // TODO error as said
+        return validationErrors(res, errors, "INVALID_INPUT", 400, false);
       } catch (error) {
         console.error(error);
         res

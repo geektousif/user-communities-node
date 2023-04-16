@@ -4,7 +4,6 @@ const User = require("../models/user.model");
 
 const signUp = asyncHandler(async (req, res) => {
   try {
-    // FIXME user create even after showing error
     const { name, email, password } = req.validatedData;
 
     const user = await User.create({ name, email, password });

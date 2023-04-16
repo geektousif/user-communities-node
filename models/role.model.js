@@ -13,7 +13,6 @@ const roleSchema = new mongoose.Schema(
       required: true,
       unique: true,
     },
-    // TODO scope
   },
   { timestamps: true, _id: false }
 );

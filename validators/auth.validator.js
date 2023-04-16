@@ -1,6 +1,7 @@
 const Validator = require("validatorjs");
 const asyncHandler = require("express-async-handler");
 const User = require("../models/user.model");
+const { validationErrors } = require("../utils/errorResponse");
 
 const signUpValidator = asyncHandler(async (req, res, next) => {
   try {
@@ -8,11 +9,12 @@ const signUpValidator = asyncHandler(async (req, res, next) => {
 
     Validator.registerAsync(
       "email_exist",
-      async function (email, attribute, req, passes) {
+      async function (email, attribute, req, passes, res) {
         try {
           const user = await User.findOne({ email: email });
           if (user) {
-            passes(false, "Email already exists");
+            passes(false, "Email already exist");
+            return;
           } else {
             passes();
           }
@@ -40,7 +42,7 @@ const signUpValidator = asyncHandler(async (req, res, next) => {
     // validatedUser.checkAsync((ok) => {
     //   if (!ok) {
     //     const errors = validatedUser.errors.all();
-    //     res.status(400).json({ status: false, errors });
+    //     validationErrors(res, errors, "INVALID_INPUT", 400, false);
     //   }
     //   // Validation passed, continue processing the request
     //   next();
@@ -49,7 +51,8 @@ const signUpValidator = asyncHandler(async (req, res, next) => {
     validatedUser.fails(async function () {
       try {
         const errors = validatedUser.errors.all();
-        res.status(400).json({ status: false, errors });
+        return validationErrors(res, errors, "INVALID_INPUT", 400, false);
+        // TODO resource exist code
       } catch (error) {
         console.error(error);
         res
@@ -79,7 +82,7 @@ const signInValidator = asyncHandler(async (req, res, next) => {
         try {
           const user = await User.findOne({ email: email });
           if (!user) {
-            return passes(false, "User with this email doesn't exist");
+            return passes(false, "Please provide a valid email address.");
           } else {
             return passes();
           }
@@ -98,7 +101,8 @@ const signInValidator = asyncHandler(async (req, res, next) => {
     validatedInput.fails(async function () {
       try {
         const errors = validatedInput.errors.all();
-        return res.status(400).json({ status: false, errors });
+        return validationErrors(res, errors, "INVALID_INPUT", 400, false);
+        // return res.status(400).json({ status: false, errors });
       } catch (error) {
         console.error(error);
         res

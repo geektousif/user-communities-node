@@ -3,8 +3,6 @@ const express = require("express");
 const { errorHandler } = require("./middlewares/errorHandler.middleware");
 // const cors = require("cors");
 
-// TODO correct response structure
-
 const app = express();
 
 app.use(express.json());

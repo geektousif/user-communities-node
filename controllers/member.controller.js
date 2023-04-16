@@ -4,7 +4,25 @@ const Member = require("../models/member.model");
 const addMember = asyncHandler(async (req, res) => {
   const { community, user, role } = req.validatedInput;
 
-  //   TODO: member validatorr needed
+  try {
+    const membership = await Member.findOne({
+      $and: [{ community: community }, { user: user }],
+    });
+    console.log(membership);
+    if (membership) {
+      return res.json({
+        status: false,
+        errors: [
+          {
+            message: "User is already added in the community.",
+            code: "RESOURCE_EXISTS",
+          },
+        ],
+      });
+    }
+  } catch (error) {
+    console.error(error);
+  }
 
   const member = await Member.create({ community, user, role });
 

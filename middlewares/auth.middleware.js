@@ -15,8 +15,15 @@ const loggedInCheck = asyncHandler(async (req, res, next) => {
   }
 
   if (!token) {
-    res.status(401);
-    throw new Error("You need to sign in to proceed.");
+    return res.status(401).json({
+      status: false,
+      errors: [
+        {
+          message: "You need to sign in to proceed.",
+          code: "NOT_SIGNEDIN",
+        },
+      ],
+    });
   }
 
   try {
@@ -27,8 +34,15 @@ const loggedInCheck = asyncHandler(async (req, res, next) => {
     );
     next();
   } catch (error) {
-    res.status(401);
-    throw new Error("You need to sign in to proceed.");
+    return res.status(401).json({
+      status: false,
+      errors: [
+        {
+          message: "You need to sign in to proceed.",
+          code: "NOT_SIGNEDIN",
+        },
+      ],
+    });
   }
 });
 

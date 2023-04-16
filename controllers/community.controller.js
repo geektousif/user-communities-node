@@ -8,18 +8,22 @@ const create = asyncHandler(async (req, res) => {
   try {
     const name = req.validatedName;
     const user = req.user;
-    const community = await Community.create({ name, owner: user._id });
+    let community = {};
 
-    // TODO They should also be added with the role Community Admin
-    const { _id: adminRoleId } = await Role.findOne({
-      name: "Community Admin",
-    });
+    try {
+      const { _id: adminRoleId } = await Role.findOne({
+        name: "Community Admin",
+      });
+      community = await Community.create({ name, owner: user._id });
 
-    await Member.create({
-      community: community._id,
-      user: community.owner,
-      role: adminRoleId,
-    });
+      await Member.create({
+        community: community._id,
+        user: community.owner,
+        role: adminRoleId,
+      });
+    } catch (error) {
+      throw new Error(error);
+    }
 
     return res.json({
       status: true,

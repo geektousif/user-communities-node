@@ -31,8 +31,15 @@ const canAddMember = asyncHandler(async (req, res, next) => {
       return next();
     }
   } catch (error) {
-    throw new Error("NOT_ALLOWED_ACCESS");
-    // TODO error message
+    return res.status(400).json({
+      status: false,
+      errors: [
+        {
+          message: "You are not authorized to perform this action.",
+          code: "NOT_ALLOWED_ACCESS",
+        },
+      ],
+    });
   }
 });
 
@@ -45,20 +52,11 @@ const canDeleteMember = asyncHandler(async (req, res, next) => {
       name: "Community Moderator",
     });
 
-    const { community } = req.body;
     const currentUser = req.user;
-    const authorized =
-      (await Member.findOne({
-        community,
-        user: currentUser._id,
-        role: adminRoleId,
-      })) ||
-      (await Member.findOne({
-        community,
-        user: currentUser._id,
-        role: moderatorRoleId,
-      }));
-    // console.log(authorized);
+    const authorized = await Member.findOne({
+      user: currentUser._id,
+      $or: [{ role: adminRoleId }, { role: moderatorRoleId }],
+    });
 
     if (!authorized) {
       return res.status(400).json({
@@ -74,8 +72,15 @@ const canDeleteMember = asyncHandler(async (req, res, next) => {
       return next();
     }
   } catch (error) {
-    throw new Error("NOT_ALLOWED_ACCESS");
-    // TODO error message
+    return res.status(400).json({
+      status: false,
+      errors: [
+        {
+          message: "You are not authorized to perform this action.",
+          code: "NOT_ALLOWED_ACCESS",
+        },
+      ],
+    });
   }
 });
 
